@@ -38,6 +38,7 @@ from megatron.bridge.training.config import (
     RNGConfig,
     TokenizerConfig,
     TrainingConfig,
+    ValidationConfig,
 )
 from megatron.bridge.training.mixed_precision import MixedPrecisionConfig
 
@@ -275,12 +276,12 @@ def _qwen25_vl_common(
     peft_config = default_peft_config(peft)
 
     # Determine dataset selection strategy.
-    _dataset_choice = dataset_type or "mock"
+    _dataset_choice = dataset_type or "hf"
     _processor_model = tokenizer_model or hf_path
 
     if _dataset_choice == "mock":
         dataset_cfg: DatasetProvider = MockVLMConversationProvider(
-            sequence_length=seq_length,
+            seq_length=seq_length,
             hf_processor_path=_processor_model,
             prompt="Describe this image.",
             num_workers=1,
@@ -293,7 +294,7 @@ def _qwen25_vl_common(
         )
     elif _dataset_choice == "preloaded":
         dataset_cfg = PreloadedVLMConversationProvider(
-            sequence_length=seq_length,
+            seq_length=seq_length,
             hf_processor_path=_processor_model,
             train_data_path=train_data_path[0] if isinstance(train_data_path, list) else train_data_path,
             valid_data_path=valid_data_path[0] if isinstance(valid_data_path, list) else valid_data_path,
@@ -307,7 +308,7 @@ def _qwen25_vl_common(
         )
     elif _dataset_choice == "hf":
         dataset_cfg = HFDatasetConversationProvider(
-            sequence_length=seq_length,
+            seq_length=seq_length,
             hf_processor_path=_processor_model,
             maker_name="make_cord_v2_dataset",
             num_workers=2,
@@ -323,13 +324,15 @@ def _qwen25_vl_common(
         model=model_cfg,
         train=TrainingConfig(
             train_iters=train_iters,
-            eval_interval=eval_interval,
-            eval_iters=32,
             global_batch_size=global_batch_size,
             micro_batch_size=micro_batch_size,
             manual_gc=True,
             manual_gc_interval=100,
             manual_gc_eval=100,
+        ),
+        validation=ValidationConfig(
+            eval_interval=eval_interval,
+            eval_iters=32,
         ),
         optimizer=opt_config,
         scheduler=scheduler,

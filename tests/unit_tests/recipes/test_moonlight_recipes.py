@@ -42,47 +42,30 @@ _MOONLIGHT_FINETUNE_FUNCS = [
 
 
 def _safe_overrides_for(name: str) -> dict:
-    # Detect if this is a finetune recipe
+    """Return overrides for recipe functions.
+
+    Pretrain configs use the new parameterless API (return empty dict).
+    Finetune configs still accept parameters.
+    """
     is_finetune = "finetune" in name.lower()
 
-    overrides = {
-        "name": f"unit_{name}",
-        "dir": ".",
-        "train_iters": 10,
-        "micro_batch_size": 1,
-        "seq_length": 64,
-        "min_lr": 1e-5,
-        "lr_warmup_iters": 2,
-    }
-
     if is_finetune:
-        # Finetuning-specific overrides
-        overrides.update(
-            {
-                "tokenizer_path": "moonshotai/Moonlight-16B-A3B",
-                "finetune_lr": 1e-4,
-                "global_batch_size": 2,
-                # Note: Finetuning recipes set parallelism internally based on PEFT vs full SFT
-            }
-        )
+        # Finetuning-specific overrides - finetune configs still accept parameters
+        overrides = {
+            "name": f"unit_{name}",
+            "dir": ".",
+            "train_iters": 10,
+            "micro_batch_size": 1,
+            "seq_length": 64,
+            "min_lr": 1e-5,
+            "lr_warmup_iters": 2,
+            "tokenizer_path": "moonshotai/Moonlight-16B-A3B",
+            "finetune_lr": 1e-4,
+            "global_batch_size": 2,
+        }
     else:
-        # Pretrain-specific overrides
-        overrides.update(
-            {
-                "mock": True,
-                "global_batch_size": 2,
-                "lr": 1e-4,
-                "tensor_model_parallel_size": 1,
-                "pipeline_model_parallel_size": 1,
-                "context_parallel_size": 1,
-                "expert_model_parallel_size": 1,
-                "sequence_parallel": False,
-                "recompute_granularity": "selective",
-                "enable_deepep": False,
-                "apply_rope_fusion": False,
-                "optimizer_type": "adam",
-            }
-        )
+        # Pretrain configs use the new parameterless API
+        overrides = {}
 
     return overrides
 
@@ -138,15 +121,7 @@ def _assert_basic_config(cfg):
 
     assert cfg.train.global_batch_size >= 1
     assert cfg.train.micro_batch_size >= 1
-
-    # Check sequence length (different attribute names for different dataset types)
-    if hasattr(cfg.dataset, "sequence_length"):
-        assert cfg.dataset.sequence_length >= 1  # GPTDatasetConfig
-    elif hasattr(cfg.dataset, "seq_length"):
-        assert cfg.dataset.seq_length >= 1  # FinetuningDatasetConfig / HFDatasetConfig
-    else:
-        # Some other dataset type
-        assert cfg.dataset is not None
+    assert cfg.dataset.seq_length >= 1
 
 
 @pytest.mark.parametrize("recipe_func", _MOONLIGHT_RECIPE_FUNCS)
