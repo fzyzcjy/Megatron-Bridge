@@ -30,6 +30,7 @@ from megatron.bridge.training.config import (
     SchedulerConfig,
     TokenizerConfig,
     TrainingConfig,
+    ValidationConfig,
 )
 from megatron.bridge.training.gpt_step import forward_step
 from megatron.bridge.training.pretrain import pretrain
@@ -87,11 +88,13 @@ class TestPretrainResume:
                 model=Llama3ModelProvider145M(seq_length=seq_length),
                 train=TrainingConfig(
                     train_iters=checkpoint_iters,
-                    eval_interval=5,
-                    eval_iters=2,
                     global_batch_size=global_batch_size,
                     micro_batch_size=micro_batch_size,
                     exit_signal_handler=True,
+                ),
+                validation=ValidationConfig(
+                    eval_interval=5,
+                    eval_iters=2,
                 ),
                 optimizer=OptimizerConfig(
                     optimizer="adam",
@@ -99,7 +102,7 @@ class TestPretrainResume:
                     fp16=False,
                     adam_beta1=0.9,
                     adam_beta2=0.95,
-                    adam_eps=1e-5,
+                    adam_eps=1e-8,
                     use_distributed_optimizer=True,
                     clip_grad=1.0,
                     lr=3e-3,
@@ -129,7 +132,7 @@ class TestPretrainResume:
                     reset_attention_mask=False,
                     reset_position_ids=False,
                     eod_mask_loss=False,
-                    sequence_length=seq_length,
+                    seq_length=seq_length,
                     num_dataset_builder_threads=1,
                     data_sharding=True,
                     dataloader_type="single",
@@ -169,11 +172,13 @@ class TestPretrainResume:
                 model=Llama3ModelProvider145M(seq_length=seq_length),
                 train=TrainingConfig(
                     train_iters=total_iters,
-                    eval_interval=5,
-                    eval_iters=2,
                     global_batch_size=global_batch_size,
                     micro_batch_size=micro_batch_size,
                     exit_signal_handler=True,
+                ),
+                validation=ValidationConfig(
+                    eval_interval=5,
+                    eval_iters=2,
                 ),
                 optimizer=OptimizerConfig(
                     optimizer="adam",
@@ -181,7 +186,7 @@ class TestPretrainResume:
                     fp16=False,
                     adam_beta1=0.9,
                     adam_beta2=0.95,
-                    adam_eps=1e-5,
+                    adam_eps=1e-8,
                     use_distributed_optimizer=True,
                     clip_grad=1.0,
                     lr=3e-3,
@@ -211,7 +216,7 @@ class TestPretrainResume:
                     reset_attention_mask=False,
                     reset_position_ids=False,
                     eod_mask_loss=False,
-                    sequence_length=seq_length,
+                    seq_length=seq_length,
                     num_dataset_builder_threads=1,
                     data_sharding=True,
                     dataloader_type="single",
